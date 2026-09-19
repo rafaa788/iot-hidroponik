@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#4AB8E8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>HidroMonitor — Smart Hydroponic Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --white:#ffffff;
+    --sky-50:#f4faff;
+    --sky-100:#e8f4fd;
+    --sky-200:#d4eaf9;
+    --sky-300:#b5dcf3;
+    --sky-400:#8ecbea;
+    --sky-500:#4ab8e8;
+    --sky-600:#2da0d4;
+    --sky-700:#1e85b5;
+    --sky-800:#176a91;
+    --sky-900:#0f4f6e;
+
+    --ink:#0f4f6e;
+    --ink-soft:#4a7a95;
+    --ink-muted:#7ea4b8;
+
+    --bg:var(--sky-50);
+    --surface:var(--white);
+    --border:var(--sky-100);
+    --muted:var(--ink-muted);
+    --primary:var(--sky-500);
+    --primary-soft:var(--sky-100);
+
+    --font-display:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-body:'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    --shadow-xs:0 1px 3px rgba(74,184,232,0.08);
+    --shadow-sm:0 2px 8px rgba(74,184,232,0.10);
+    --shadow-md:0 6px 20px rgba(74,184,232,0.14);
+    --shadow-lg:0 12px 32px rgba(74,184,232,0.18);
+
+    --safe-top:env(safe-area-inset-top, 0px);
+    --safe-bottom:env(safe-area-inset-bottom, 0px);
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:15px;
+    line-height:1.5;
+    min-height:100vh;
+    min-height:100dvh;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    position:relative;
+    overscroll-behavior-y:contain;
+  }
+
+  input,button,select,textarea{ font-size:16px; font-family:inherit; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
+  }
+
+  /* ============================================================
+     INTRO
+     ============================================================ */
+  #intro{
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    background:
+      radial-gradient(ellipse at 50% 100%, rgba(74,184,232,0.28) 0%, transparent 60%),
+      radial-gradient(circle at 20% 10%, rgba(142,203,234,0.35) 0%, transparent 50%),
+      radial-gradient(circle at 85% 20%, rgba(180,220,243,0.5) 0%, transparent 55%),
+      linear-gradient(180deg, #ffffff 0%, #f4faff 40%, #e8f4fd 75%, #d4eaf9 100%);
+    z-index:50;
+    overflow:hidden;
+    transition:transform 1.2s cubic-bezier(.7,0,.2,1), opacity 1.2s ease;
+    padding:calc(var(--safe-top) + 12px) 16px calc(var(--safe-bottom) + 12px);
+  }
+  #intro.leaving{
+    transform:translateY(-6%) scale(1.02);
+    opacity:0;
+  }
+
+  .orbit{
+    position:absolute;
+    border:1px solid rgba(74,184,232,0.15);
+    border-radius:50%;
+    top:50%; left:50%;
+    pointer-events:none;
+  }
+  .orbit.o1{ width:280px; height:280px; margin:-140px 0 0 -140px; animation:spin 30s linear infinite; }
+  .orbit.o2{ width:440px; height:440px; margin:-220px 0 0 -220px; border-color:rgba(74,184,232,0.10); animation:spin 46s linear infinite reverse; }
+  .orbit.o3{ width:640px; height:640px; margin:-320px 0 0 -320px; border-style:dashed; border-color:rgba(74,184,232,0.08); animation:spin 70s linear infinite; }
+  @keyframes spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  .orbit::after{
+    content:''; position:absolute;
+    width:6px; height:6px; border-radius:50%;
+    background:var(--sky-500);
+    top:-3px; left:50%; margin-left:-3px;
+    box-shadow:0 0 10px var(--sky-500), 0 0 20px rgba(74,184,232,0.5);
+  }
+  .orbit.o2::after{ background:var(--sky-400); width:5px; height:5px; }
+  .orbit.o3::after{ background:var(--sky-300); width:4px; height:4px; }
+
+  .light-dot{
+    position:absolute;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(74,184,232,0.7), transparent 70%);
+    pointer-events:none;
+    animation:floatDot linear infinite;
+  }
+  @keyframes floatDot{
+    0%{ transform:translateY(20px) scale(0.6); opacity:0; }
+    15%{ opacity:0.85; }
+    85%{ opacity:0.45; }
+    100%{ transform:translateY(-85vh) scale(1.2); opacity:0; }
+  }
+
+  .drip{
+    position:absolute;
+    top:-30px;
+    width:2px;
+    background:linear-gradient(180deg, transparent, rgba(74,184,232,0.45), rgba(74,184,232,0.75));
+    border-radius:100px;
+    pointer-events:none;
+    animation:fall linear infinite;
+  }
+  @keyframes fall{
+    0%{ transform:translateY(-40px); opacity:0; }
+    10%{ opacity:0.9; }
+    90%{ opacity:0.6; }
+    100%{ transform:translateY(110vh); opacity:0; }
+  }
+
+  .intro-inner{
+    display:flex; flex-direction:column; align-items:center;
+    gap:20px;
+    position:relative;
+    z-index:2;
+    max-width:380px;
+    width:100%;
+  }
+
+  .scene{
+    position:relative;
+    width:220px;
+    height:220px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .scene::after{
+    content:'';
+    position:absolute;
+    bottom:0; left:50%;
+    width:180px; height:24px;
+    transform:translateX(-50%);
+    background:radial-gradient(ellipse, rgba(74,184,232,0.4), transparent 70%);
+    filter:blur(10px);
+    opacity:0;
+    animation:groundGlow 1.4s ease 2.6s forwards;
+  }
+  @keyframes groundGlow{ to{ opacity:1; } }
+
+  .plant-svg{ width:220px; height:220px; overflow:visible; }
+
+  .netpot{ opacity:0; transform:translateY(20px); animation:riseUp 1s cubic-bezier(.34,1.2,.64,1) 0.3s forwards; }
+  @keyframes riseUp{ to{ opacity:1; transform:translateY(0); } }
+
+  .water-line{ opacity:0; animation:waterRise 1.6s ease 0.6s forwards; }
+  @keyframes waterRise{
+    0%{ opacity:0; transform:translateY(20px); }
+    100%{ opacity:0.9; transform:translateY(0); }
+  }
+
+  .root{ stroke-dasharray:80; stroke-dashoffset:80; opacity:0; animation:rootGrow 1.4s cubic-bezier(.6,0,.3,1) forwards; }
+  .root.r1{ animation-delay:1.0s; }
+  .root.r2{ animation-delay:1.2s; }
+  .root.r3{ animation-delay:1.4s; }
+  @keyframes rootGrow{
+    0%{ stroke-dashoffset:80; opacity:0; }
+    20%{ opacity:1; }
+    100%{ stroke-dashoffset:0; opacity:1; }
+  }
+
+  .stem{ stroke-dasharray:160; stroke-dashoffset:160; animation:stemGrow 1.8s cubic-bezier(.6,0,.3,1) 1.5s forwards; }
+  @keyframes stemGrow{ to{ stroke-dashoffset:0; } }
+
+  .leaf{ transform-origin:center bottom; opacity:0; transform:scale(0.2); }
+  .leaf.l1{ transform-origin:105px 155px; animation:leafPop 1s cubic-bezier(.34,1.56,.64,1) 2.2s forwards; }
+  .leaf.l2{ transform-origin:135px 145px; animation:leafPop 1s cubic-bezier(.34,1.56,.64,1) 2.5s forwards; }
+  .leaf.l3{ transform-origin:110px 125px; animation:leafPop 1s cubic-bezier(.34,1.56,.64,1) 2.8s forwards; }
+  .leaf.l4{ transform-origin:140px 110px; animation:leafPop 1s cubic-bezier(.34,1.56,.64,1) 3.1s forwards; }
+  @keyframes leafPop{
+    0%{ opacity:0; transform:scale(0.2) rotate(-20deg); }
+    60%{ opacity:1; transform:scale(1.12) rotate(6deg); }
+    100%{ opacity:1; transform:scale(1) rotate(0deg); }
+  }
+
+  .water-drop{ opacity:0; animation:dropFall 3.6s cubic-bezier(.5,0,.5,1) infinite; animation-delay:3.4s; }
+  @keyframes dropFall{
+    0%{ opacity:0; transform:translateY(-30px) scale(0.6); }
+    10%{ opacity:1; transform:translateY(-30px) scale(1); }
+    60%{ opacity:1; transform:translateY(60px) scale(1); }
+    70%{ opacity:0; transform:translateY(75px) scale(1.4); }
+    100%{ opacity:0; transform:translateY(75px) scale(1.4); }
+  }
+
+  .splash{ opacity:0; transform-origin:center; animation:splashPop 3.6s ease infinite; animation-delay:3.4s; }
+  @keyframes splashPop{
+    0%, 62%{ opacity:0; transform:scale(0.3); }
+    68%{ opacity:1; transform:scale(1); }
+    80%{ opacity:0; transform:scale(1.8); }
+    100%{ opacity:0; transform:scale(1.8); }
+  }
+
+  .aura{ opacity:0; animation:auraIn 1.2s ease 3.6s forwards; }
+  @keyframes auraIn{ to{ opacity:0.55; } }
+  .aura-pulse{ animation:auraPulse 3s ease-in-out infinite; animation-delay:4.4s; }
+  @keyframes auraPulse{
+    0%,100%{ transform:scale(1); opacity:0.5; }
+    50%{ transform:scale(1.12); opacity:0.75; }
+  }
+
+  .intro-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:30px;
+    color:var(--ink);
+    text-align:center;
+    letter-spacing:-0.025em;
+    line-height:1;
+    position:relative;
+    overflow:hidden;
+    padding:0 4px 6px;
+  }
+  .intro-title span{
+    display:inline-block;
+    opacity:0;
+    transform:translateY(105%);
+    animation:letterReveal 0.9s cubic-bezier(.34,1.2,.64,1) forwards;
+  }
+  .intro-title .dot{
+    color:var(--sky-500);
+    animation-delay:4.5s, 5.2s;
+  }
+  @keyframes letterReveal{ to{ opacity:1; transform:translateY(0); } }
+
+  .intro-sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    text-align:center;
+    max-width:290px;
+    line-height:1.6;
+    opacity:0;
+    animation:rise 1s cubic-bezier(.6,0,.3,1) 4.9s forwards;
+  }
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(14px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .intro-cta-wrap{
+    display:flex; flex-direction:column; align-items:center;
+    gap:12px;
+    width:100%;
+    opacity:0;
+    animation:rise 1s cubic-bezier(.6,0,.3,1) 5.4s forwards;
+  }
+
+  #enter-btn{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:15px;
+    color:var(--white);
+    background:linear-gradient(135deg, var(--sky-500), var(--sky-600));
+    border:none;
+    padding:16px 44px;
+    border-radius:100px;
+    cursor:pointer;
+    transition:transform 0.3s cubic-bezier(.34,1.56,.64,1), box-shadow 0.3s ease;
+    box-shadow:0 10px 24px rgba(74,184,232,0.4);
+    position:relative;
+    overflow:hidden;
+    min-height:52px;
+    letter-spacing:-0.005em;
+    width:100%;
+    max-width:280px;
+  }
+  #enter-btn::before{
+    content:'';
+    position:absolute; inset:0;
+    background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+    transform:translateX(-100%);
+    transition:transform 1.1s ease;
+  }
+  #enter-btn:active{
+    transform:scale(0.97);
+    box-shadow:0 6px 16px rgba(74,184,232,0.5);
+  }
+
+  .load-line{
+    width:140px;
+    height:3px;
+    background:var(--sky-100);
+    border-radius:100px;
+    overflow:hidden;
+    position:relative;
+  }
+  .load-line::after{
+    content:'';
+    position:absolute;
+    top:0; left:0;
+    height:100%;
+    width:0;
+    background:linear-gradient(90deg, var(--sky-400), var(--sky-600));
+    border-radius:100px;
+    animation:loadFill 9s linear 0s forwards;
+  }
+  @keyframes loadFill{ to{ width:100%; } }
+
+  .skip-btn{
+    position:absolute;
+    top:calc(var(--safe-top) + 16px);
+    right:16px;
+    background:rgba(255,255,255,0.7);
+    border:1px solid var(--sky-200);
+    color:var(--sky-700);
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:100px;
+    cursor:pointer;
+    font-family:var(--font-body);
+    opacity:0;
+    animation:rise 0.8s ease 1.5s forwards;
+    transition:all 0.25s ease;
+    z-index:10;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    min-height:38px;
+  }
+  .skip-btn:active{
+    transform:scale(0.95);
+    background:rgba(255,255,255,0.95);
+  }
+
+  /* ============================================================
+     PLANT PICKER SCREEN
+     ============================================================ */
+  #picker{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:linear-gradient(180deg, #ffffff 0%, #f4faff 100%);
+    z-index:40;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:calc(var(--safe-top) + 20px) 16px calc(var(--safe-bottom) + 20px);
+    opacity:0;
+  }
+  #picker.show{
+    display:block;
+    animation:fadeIn 0.6s ease forwards;
+  }
+  #picker.leaving{
+    animation:pickerLeave 0.5s ease forwards;
+  }
+  @keyframes pickerLeave{
+    to{ opacity:0; transform:translateY(-20px); }
+  }
+  @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+
+  .picker-inner{
+    max-width:480px;
+    margin:0 auto;
+  }
+
+  .picker-header{
+    text-align:center;
+    margin-bottom:22px;
+    opacity:0;
+    animation:rise 0.7s ease 0.15s forwards;
+  }
+  .picker-eyebrow{
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--sky-600);
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .picker-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:26px;
+    color:var(--ink);
+    letter-spacing:-0.025em;
+    line-height:1.15;
+    margin-bottom:8px;
+  }
+  .picker-sub{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    max-width:300px;
+    margin:0 auto;
+  }
+
+  .picker-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:20px;
+  }
+
+  .plant-card{
+    background:var(--white);
+    border:1.5px solid var(--sky-100);
+    border-radius:18px;
+    padding:14px 12px;
+    cursor:pointer;
+    transition:all 0.3s cubic-bezier(.34,1.2,.64,1);
+    position:relative;
+    overflow:hidden;
+    text-align:left;
+    font-family:var(--font-body);
+    opacity:0;
+    animation:cardIn 0.7s cubic-bezier(.34,1.2,.64,1) forwards;
+    -webkit-appearance:none;
+    appearance:none;
+    color:inherit;
+  }
+  .plant-card:active{
+    transform:scale(0.96);
+    border-color:var(--sky-400);
+  }
+  .plant-card.selected{
+    border-color:var(--sky-500);
+    border-width:2px;
+    background:linear-gradient(155deg, var(--white), var(--sky-50));
+    box-shadow:0 8px 24px rgba(74,184,232,0.25);
+  }
+  .plant-card.selected::after{
+    content:'';
+    position:absolute;
+    top:10px; right:10px;
+    width:22px; height:22px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--sky-400), var(--sky-600));
+    box-shadow:0 4px 10px rgba(74,184,232,0.4);
+    animation:checkIn 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .plant-card.selected::before{
+    content:'✓';
+    position:absolute;
+    top:10px; right:10px;
+    width:22px; height:22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--white);
+    font-size:13px;
+    font-weight:700;
+    z-index:2;
+    animation:checkIn 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes checkIn{
+    from{ transform:scale(0) rotate(-45deg); }
+    to{ transform:scale(1) rotate(0); }
+  }
+
+  .plant-emoji{
+    font-size:32px;
+    line-height:1;
+    margin-bottom:8px;
+    display:block;
+    filter:drop-shadow(0 4px 8px rgba(74,184,232,0.15));
+  }
+  .plant-name{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:14.5px;
+    color:var(--ink);
+    letter-spacing:-0.01em;
+    margin-bottom:3px;
+  }
+  .plant-desc{
+    font-size:11px;
+    color:var(--ink-muted);
+    line-height:1.35;
+  }
+
+  .picker-actions{
+    position:sticky;
+    bottom:0;
+    padding-top:14px;
+    background:linear-gradient(180deg, transparent, var(--sky-50) 30%);
+    opacity:0;
+    animation:rise 0.7s ease 0.6s forwards;
+  }
+
+  #confirm-plant{
+    width:100%;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:15.5px;
+    color:var(--white);
+    background:linear-gradient(135deg, var(--sky-500), var(--sky-600));
+    border:none;
+    padding:17px 20px;
+    border-radius:100px;
+    cursor:pointer;
+    transition:all 0.3s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 10px 24px rgba(74,184,232,0.4);
+    min-height:54px;
+    position:relative;
+    overflow:hidden;
+  }
+  #confirm-plant::before{
+    content:'';
+    position:absolute; inset:0;
+    background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+    transform:translateX(-100%);
+    transition:transform 1s ease;
+  }
+  #confirm-plant:active:not(:disabled){
+    transform:scale(0.97);
+  }
+  #confirm-plant:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  /* ============================================================
+     APP / DASHBOARD
+     ============================================================ */
+  #app{
+    display:none;
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    min-height:100dvh;
+    position:relative;
+    background:var(--bg);
+    padding-bottom:calc(76px + var(--safe-bottom));
+  }
+  #app.show{
+    display:block;
+    animation:fadeIn 0.6s ease forwards;
+  }
+
+  .top-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:calc(var(--safe-top) + 14px) 16px 14px;
+    position:sticky;
+    top:0;
+    background:rgba(255,255,255,0.92);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--sky-100);
+    z-index:20;
+    gap:10px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; min-width:0; flex:1; }
+  .brand-mark{
+    width:36px; height:36px;
+    border-radius:11px;
+    background:linear-gradient(150deg, var(--sky-400), var(--sky-600));
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    box-shadow:0 4px 12px rgba(74,184,232,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+    position:relative;
+    overflow:hidden;
+  }
+  .brand-mark::after{
+    content:''; position:absolute;
+    top:0; left:-100%;
+    width:100%; height:100%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation:markShine 4s ease-in-out infinite;
+  }
+  @keyframes markShine{
+    0%,70%,100%{ left:-100%; }
+    35%{ left:100%; }
+  }
+  .brand-text{ min-width:0; flex:1; }
+  .brand-name{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:15.5px;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .brand-sub{
+    font-size:10.5px;
+    color:var(--ink-muted);
+    margin-top:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    display:flex; align-items:center; gap:5px;
+  }
+  .brand-sub-plant{
+    font-weight:600;
+    color:var(--sky-600);
+  }
+
+  .change-plant-btn{
+    background:var(--sky-50);
+    border:1px solid var(--sky-200);
+    color:var(--sky-700);
+    font-size:11.5px;
+    font-weight:600;
+    padding:7px 11px;
+    border-radius:100px;
+    cursor:pointer;
+    font-family:var(--font-body);
+    transition:all 0.25s ease;
+    flex-shrink:0;
+    white-space:nowrap;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  .change-plant-btn:active{
+    transform:scale(0.95);
+    background:var(--sky-100);
+  }
+
+  .content{
+    padding:16px 16px 24px;
+  }
+
+  .greeting{
+    margin-bottom:16px;
+    opacity:0;
+    animation:rise 0.7s ease 0.15s forwards;
+  }
+  .greeting-eyebrow{
+    font-size:12px;
+    color:var(--ink-muted);
+    font-weight:500;
+    margin-bottom:3px;
+  }
+  .greeting-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:22px;
+    color:var(--ink);
+    letter-spacing:-0.02em;
+    line-height:1.2;
+  }
+
+  .hero-card{
+    background:linear-gradient(135deg, var(--sky-400) 0%, var(--sky-500) 55%, var(--sky-600) 100%);
+    border-radius:22px;
+    padding:20px;
+    color:var(--white);
+    display:flex; align-items:center; gap:14px;
+    margin-bottom:20px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 14px 32px rgba(74,184,232,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    opacity:0;
+    animation:heroIn 0.9s cubic-bezier(.6,0,.3,1) 0.25s forwards;
+  }
+  @keyframes heroIn{
+    from{ opacity:0; transform:translateY(20px) scale(0.97); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  .hero-card::before{
+    content:''; position:absolute;
+    top:-50%; right:-30%;
+    width:200px; height:200px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%);
+    animation:heroGlow 6s ease-in-out infinite;
+  }
+  @keyframes heroGlow{
+    0%,100%{ transform:translate(0,0) scale(1); opacity:0.8; }
+    50%{ transform:translate(-20px,20px) scale(1.15); opacity:1; }
+  }
+  .hero-card::after{
+    content:''; position:absolute;
+    top:0; left:-100%;
+    width:60%; height:100%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+    animation:heroShimmer 5s ease-in-out infinite;
+  }
+  @keyframes heroShimmer{
+    0%,60%,100%{ left:-100%; }
+    30%{ left:150%; }
+  }
+  .hero-plant-icon{
+    width:52px; height:52px;
+    border-radius:16px;
+    background:rgba(255,255,255,0.2);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    flex-shrink:0;
+    position:relative;
+    z-index:1;
+    border:1px solid rgba(255,255,255,0.25);
+    animation:bob 4s ease-in-out infinite;
+  }
+  @keyframes bob{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-5px); }
+  }
+  .hero-text{ position:relative; z-index:1; flex:1; min-width:0; }
+  .hero-eyebrow{
+    font-size:10.5px; font-weight:600;
+    color:rgba(255,255,255,0.85);
+    margin-bottom:4px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+  }
+  .hero-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:17px;
+    line-height:1.25;
+    margin-bottom:4px;
+    letter-spacing:-0.01em;
+  }
+  .hero-meta{
+    font-size:11.5px;
+    color:rgba(255,255,255,0.9);
+    line-height:1.4;
+  }
+
+  .section-label{
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin:20px 2px 10px;
+    letter-spacing:0.02em;
+    display:flex; align-items:center; gap:8px;
+    opacity:0;
+    animation:rise 0.6s ease forwards;
+  }
+  .section-label::after{
+    content:''; flex:1; height:1px;
+    background:linear-gradient(90deg, var(--sky-200), transparent);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--sky-100);
+    border-radius:18px;
+    padding:14px 13px 12px;
+    transition:border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    position:relative;
+    overflow:hidden;
+    opacity:0;
+    box-shadow:var(--shadow-xs);
+  }
+  .card.enter{ animation:cardIn 0.8s cubic-bezier(.34,1.2,.64,1) forwards; }
+  @keyframes cardIn{
+    from{ opacity:0; transform:translateY(20px) scale(0.95); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  .card:active{ transform:scale(0.98); }
+  .card.warn{
+    border-color:var(--sky-400);
+    border-width:1.5px;
+    animation:warnPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes warnPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(74,184,232,0.0); }
+    50%{ box-shadow:0 0 0 6px rgba(74,184,232,0.15); }
+  }
+  .card-top{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .card-icon{
+    width:32px; height:32px;
+    border-radius:10px;
+    background:linear-gradient(150deg, var(--sky-100), var(--sky-200));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .warn-badge{
+    display:flex; align-items:center; gap:3px;
+    font-size:9.5px; font-weight:700;
+    color:var(--sky-700);
+    background:var(--sky-100);
+    padding:3px 6px;
+    border-radius:100px;
+    transition:opacity 0.3s ease;
+  }
+  .card-label{
+    font-size:11.5px;
+    color:var(--ink-muted);
+    margin-bottom:3px;
+    font-weight:500;
+  }
+  .card-value{
+    font-family:var(--font-display);
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:-0.02em;
+    font-variant-numeric:tabular-nums;
+    line-height:1.1;
+    color:var(--ink);
+  }
+  .card-unit{
+    font-size:12px;
+    font-weight:500;
+    color:var(--ink-muted);
+    margin-left:2px;
+  }
+
+  .spark{ margin-top:6px; height:20px; width:100%; }
+  .spark path{
+    fill:none;
+    stroke:var(--sky-500);
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:200;
+    stroke-dashoffset:200;
+    animation:drawLine 1.6s cubic-bezier(.6,0,.3,1) forwards;
+  }
+  @keyframes drawLine{ to{ stroke-dashoffset:0; } }
+
+  .bar-track{
+    height:4px;
+    border-radius:4px;
+    background:var(--sky-50);
+    margin-top:8px;
+    overflow:hidden;
+    position:relative;
+  }
+  .bar-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--sky-400), var(--sky-600));
+    border-radius:4px;
+    transition:width 1.2s cubic-bezier(.6,0,.3,1);
+    position:relative;
+  }
+  .bar-fill::after{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation:barShine 2.4s ease-in-out infinite;
+  }
+  @keyframes barShine{
+    0%{ transform:translateX(-100%); }
+    100%{ transform:translateX(200%); }
+  }
+  .bar-ideal{
+    position:absolute;
+    top:0; bottom:0;
+    background:rgba(74,184,232,0.18);
+    border-left:1px dashed var(--sky-400);
+    border-right:1px dashed var(--sky-400);
+    pointer-events:none;
+  }
+  .card-range{
+    font-size:10px;
+    color:var(--ink-muted);
+    margin-top:7px;
+  }
+
+  .spray-card{
+    background:linear-gradient(155deg, var(--white), var(--sky-50));
+    border:1px solid var(--sky-100);
+    border-radius:22px;
+    padding:18px 16px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:var(--shadow-sm);
+    opacity:0;
+    animation:rise 0.8s ease 0.7s forwards;
+    margin-bottom:8px;
+  }
+  .spray-card::before{
+    content:''; position:absolute;
+    top:-80px; right:-60px;
+    width:180px; height:180px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(74,184,232,0.15) 0%, transparent 70%);
+    animation:heroGlow 7s ease-in-out infinite;
+  }
+  .spray-head{
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:14px;
+    position:relative; z-index:1;
+  }
+  .spray-nozzle{
+    width:50px; height:50px;
+    border-radius:15px;
+    background:linear-gradient(150deg, var(--sky-400), var(--sky-600));
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    box-shadow:0 6px 16px rgba(74,184,232,0.4), inset 0 1px 0 rgba(255,255,255,0.35);
+    position:relative;
+    overflow:visible;
+  }
+  .spray-nozzle.spraying{ animation:nozzlePulse 0.6s ease-in-out infinite; }
+  @keyframes nozzlePulse{
+    0%,100%{ transform:scale(1); box-shadow:0 6px 16px rgba(74,184,232,0.4); }
+    50%{ transform:scale(1.08); box-shadow:0 12px 24px rgba(74,184,232,0.6); }
+  }
+  .spray-info{ flex:1; position:relative; z-index:1; min-width:0; }
+  .spray-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:15px;
+    margin-bottom:2px;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  .spray-sub{
+    font-size:11.5px;
+    color:var(--ink-muted);
+    line-height:1.35;
+  }
+
+  .toggle{
+    width:46px; height:27px;
+    border-radius:100px;
+    background:var(--sky-200);
+    position:relative; cursor:pointer;
+    transition:background 0.35s ease;
+    flex-shrink:0; border:none; padding:0; outline:none;
+    min-height:27px;
+  }
+  .toggle::after{
+    content:''; position:absolute;
+    top:3px; left:3px;
+    width:21px; height:21px;
+    border-radius:50%; background:var(--white);
+    box-shadow:0 2px 6px rgba(15,79,110,0.2);
+    transition:transform 0.35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toggle.on{ background:linear-gradient(90deg, var(--sky-400), var(--sky-600)); }
+  .toggle.on::after{ transform:translateX(19px); }
+
+  .schedule-row{
+    display:flex; gap:6px;
+    margin-bottom:12px;
+    position:relative; z-index:1;
+    flex-wrap:wrap;
+  }
+  .schedule-chip{
+    font-size:11px; font-weight:600;
+    padding:7px 11px;
+    border-radius:100px;
+    background:var(--white);
+    border:1.5px solid var(--sky-200);
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all 0.25s ease;
+    font-family:var(--font-body);
+    flex:1;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .schedule-chip.active{
+    background:linear-gradient(135deg, var(--sky-400), var(--sky-600));
+    border-color:transparent;
+    color:var(--white);
+    box-shadow:0 4px 10px rgba(74,184,232,0.3);
+  }
+  .schedule-chip:active:not(.active){
+    border-color:var(--sky-400);
+    background:var(--sky-50);
+  }
+
+  .duration-row{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 13px;
+    background:var(--white);
+    border:1px solid var(--sky-100);
+    border-radius:14px;
+    margin-bottom:12px;
+    position:relative; z-index:1;
+  }
+  .duration-label{
+    font-size:11.5px; color:var(--ink-soft);
+    font-weight:500; white-space:nowrap;
+  }
+  .duration-value{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:13px;
+    color:var(--sky-700);
+    min-width:36px; text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    flex:1; height:4px;
+    background:var(--sky-100);
+    border-radius:100px;
+    outline:none; cursor:pointer;
+    min-width:60px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:20px; height:20px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--sky-400), var(--sky-600));
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(74,184,232,0.5);
+    border:2px solid var(--white);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:20px; height:20px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--sky-400), var(--sky-600));
+    cursor:pointer; border:2px solid var(--white);
+  }
+
+  .spray-controls{
+    display:flex; gap:8px;
+    margin-bottom:12px;
+    position:relative; z-index:1;
+  }
+  .spray-btn{
+    flex:1;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13.5px;
+    color:var(--white);
+    background:linear-gradient(135deg, var(--sky-500), var(--sky-600));
+    border:none;
+    padding:14px 16px;
+    border-radius:14px;
+    cursor:pointer;
+    transition:transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+    box-shadow:0 6px 16px rgba(74,184,232,0.35);
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    min-height:48px;
+  }
+  .spray-btn:active:not(:disabled){ transform:scale(0.97); }
+  .spray-btn:disabled{ opacity:0.45; cursor:not-allowed; }
+  .spray-btn.secondary{
+    background:var(--white);
+    color:var(--sky-700);
+    border:1.5px solid var(--sky-200);
+    box-shadow:var(--shadow-xs);
+    flex:0 0 auto;
+    padding:14px 18px;
+  }
+  .spray-btn.secondary:active:not(:disabled){
+    background:var(--sky-50);
+    border-color:var(--sky-400);
+  }
+
+  .spray-log{
+    display:flex; align-items:center; gap:7px;
+    font-size:11px;
+    color:var(--ink-muted);
+    padding-top:12px;
+    border-top:1px solid var(--sky-100);
+    position:relative; z-index:1;
+  }
+  .spray-log svg{ flex-shrink:0; }
+
+  .spray-particles{
+    position:absolute; inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:0;
+    opacity:0;
+    transition:opacity 0.3s ease;
+  }
+  .spray-particles.active{ opacity:1; }
+  .particle{
+    position:absolute;
+    width:6px; height:6px;
+    border-radius:50%;
+    background:radial-gradient(circle, var(--sky-300), var(--sky-500));
+    opacity:0;
+    animation:sprayOut 1.2s ease-out infinite;
+  }
+  @keyframes sprayOut{
+    0%{ opacity:0; transform:translate(0,0) scale(0.4); }
+    20%{ opacity:0.9; }
+    100%{ opacity:0; transform:translate(var(--dx), var(--dy)) scale(1.2); }
+  }
+
+  .countdown-overlay{
+    position:absolute; inset:0;
+    background:rgba(232,244,253,0.92);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    border-radius:22px;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:12px;
+    z-index:10;
+    opacity:0; pointer-events:none;
+    transition:opacity 0.35s ease;
+  }
+  .countdown-overlay.active{ opacity:1; pointer-events:auto; }
+  .ring-wrap{ position:relative; width:100px; height:100px; }
+  .ring-wrap svg{ transform:rotate(-90deg); }
+  .ring-bg{ stroke:var(--sky-200); }
+  .ring-fg{
+    stroke:var(--sky-500);
+    stroke-linecap:round;
+    transition:stroke-dashoffset 0.15s linear;
+  }
+  .ring-center{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .ring-num{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:28px;
+    color:var(--sky-700);
+    font-variant-numeric:tabular-nums;
+  }
+  .ring-label{
+    font-size:10px;
+    color:var(--sky-600);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    margin-top:2px;
+  }
+  .countdown-text{
+    color:var(--sky-800);
+    font-size:13.5px;
+    font-weight:600;
+    font-family:var(--font-display);
+  }
+
+  .chart-card{
+    background:var(--white);
+    border:1px solid var(--sky-100);
+    border-radius:18px;
+    padding:16px 14px 10px;
+    margin-top:14px;
+    box-shadow:var(--shadow-xs);
+    opacity:0;
+    animation:rise 0.8s ease 1.1s forwards;
+  }
+  .chart-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .chart-title{ font-size:12.5px; font-weight:600; color:var(--ink); }
+  .chart-now{
+    font-size:11.5px;
+    color:var(--ink-muted);
+    font-variant-numeric:tabular-nums;
+    font-weight:600;
+  }
+  #ph-chart polyline{
+    stroke-dasharray:1000;
+    stroke-dashoffset:1000;
+    animation:drawLine 2.4s cubic-bezier(.6,0,.3,1) forwards;
+  }
+  #ph-chart polygon{
+    opacity:0;
+    animation:fadeInEl 1.6s ease 1s forwards;
+  }
+  @keyframes fadeInEl{ to{ opacity:1; } }
+
+  /* ============================================================
+     PLANT INFO SECTION — FITUR TANAMAN
+     ============================================================ */
+  .plant-info-card{
+    background:linear-gradient(155deg, var(--white), var(--sky-50));
+    border:1px solid var(--sky-100);
+    border-radius:20px;
+    padding:16px 15px 14px;
+    margin-top:14px;
+    box-shadow:var(--shadow-xs);
+    opacity:0;
+    animation:rise 0.8s ease 1.3s forwards;
+    position:relative;
+    overflow:hidden;
+  }
+  .plant-info-card::before{
+    content:'';
+    position:absolute;
+    top:-40px; right:-40px;
+    width:140px; height:140px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(74,184,232,0.12) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .plant-info-head{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    margin-bottom:14px;
+    position:relative;
+    z-index:1;
+  }
+  .plant-info-icon{
+    width:52px; height:52px;
+    border-radius:16px;
+    background:linear-gradient(150deg, var(--sky-100), var(--sky-200));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    flex-shrink:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.7);
+  }
+  .plant-info-text{ flex:1; min-width:0; }
+  .plant-info-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:15px;
+    color:var(--ink);
+    margin-bottom:4px;
+    letter-spacing:-0.01em;
+  }
+  .plant-info-desc{
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.5;
+  }
+  .plant-info-tags{
+    display:flex;
+    gap:5px;
+    margin-top:10px;
+    flex-wrap:wrap;
+    position:relative;
+    z-index:1;
+  }
+  .plant-info-tag{
+    font-size:10px;
+    font-weight:600;
+    padding:4px 9px;
+    border-radius:100px;
+    background:var(--sky-100);
+    color:var(--sky-700);
+  }
+  .plant-info-tag.highlight{
+    background:linear-gradient(135deg, var(--sky-400), var(--sky-600));
+    color:var(--white);
+  }
+
+  .plant-range-title{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    margin:14px 0 8px;
+    position:relative;
+    z-index:1;
+  }
+  .plant-range-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    position:relative;
+    z-index:1;
+  }
+  .plant-range-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px 11px;
+    background:var(--white);
+    border:1px solid var(--sky-100);
+    border-radius:10px;
+    font-size:11.5px;
+  }
+  .plant-range-label{
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .plant-range-value{
+    font-family:var(--font-display);
+    font-weight:700;
+    color:var(--sky-700);
+    font-variant-numeric:tabular-nums;
+  }
+
+  .plant-spray-info{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px;
+    background:linear-gradient(135deg, rgba(74,184,232,0.08), rgba(74,184,232,0.04));
+    border:1px dashed var(--sky-300);
+    border-radius:12px;
+    margin-top:12px;
+    position:relative;
+    z-index:1;
+  }
+  .plant-spray-info svg{ flex-shrink:0; color:var(--sky-600); }
+  .plant-spray-text{
+    font-size:11.5px;
+    color:var(--sky-700);
+    line-height:1.4;
+  }
+  .plant-spray-text strong{
+    font-weight:700;
+  }
+
+  .bottom-nav{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    max-width:480px;
+    margin:0 auto;
+    background:rgba(255,255,255,0.95);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border-top:1px solid var(--sky-100);
+    display:flex;
+    padding:8px 4px calc(8px + var(--safe-bottom));
+    z-index:30;
+    transform:translateY(120%);
+    transition:transform 0.6s cubic-bezier(.6,0,.3,1);
+  }
+  #app.show .bottom-nav{ transform:translateY(0); }
+
+  .nav-item{
+    flex:1;
+    background:none;
+    border:none;
+    padding:6px 4px;
+    display:flex; flex-direction:column;
+    align-items:center; gap:3px;
+    cursor:pointer;
+    color:var(--ink-muted);
+    transition:color 0.25s ease;
+    font-family:var(--font-body);
+    position:relative;
+    min-height:52px;
+  }
+  .nav-item svg{ transition:transform 0.3s cubic-bezier(.34,1.56,.64,1); }
+  .nav-item.active{ color:var(--sky-600); }
+  .nav-item.active svg{ transform:translateY(-2px) scale(1.08); }
+  .nav-item.active::after{
+    content:'';
+    position:absolute;
+    bottom:0;
+    width:20px; height:3px;
+    background:linear-gradient(90deg, var(--sky-400), var(--sky-600));
+    border-radius:100px;
+    animation:navIndicator 0.4s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes navIndicator{
+    from{ transform:scaleX(0); opacity:0; }
+    to{ transform:scaleX(1); opacity:1; }
+  }
+  .nav-label{
+    font-size:9.5px;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+  .nav-item:active{ transform:scale(0.95); }
+
+  .toast{
+    position:fixed;
+    bottom:calc(86px + var(--safe-bottom));
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(135deg, var(--sky-500), var(--sky-600));
+    color:var(--white);
+    padding:12px 20px;
+    border-radius:100px;
+    font-size:13px;
+    font-weight:600;
+    box-shadow:0 12px 32px rgba(74,184,232,0.5);
+    z-index:100;
+    opacity:0;
+    transition:all 0.5s cubic-bezier(.34,1.56,.64,1);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    pointer-events:none;
+    max-width:calc(100% - 40px);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .toast.show{
+    transform:translateX(-50%) translateY(0);
+    opacity:1;
+  }
+  .toast svg{ flex-shrink:0; }
+
+  .footer-info{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--ink-muted);
+    margin-top:20px;
+    padding-bottom:8px;
+    opacity:0;
+    animation:rise 0.8s ease 1.5s forwards;
+  }
+  .footer-info::before{
+    content:'●';
+    color:var(--sky-500);
+    margin-right:5px;
+    animation:pulseText 2s ease-in-out infinite;
+    display:inline-block;
+  }
+  @keyframes pulseText{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.3; }
+  }
+
+  @media (max-width: 340px){
+    .grid{ grid-template-columns:1fr; }
+    .intro-title{ font-size:26px; }
+    .scene{ width:180px; height:180px; }
+    .plant-svg{ width:180px; height:180px; }
+    .picker-grid{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     INTRO
+     ============================================================ -->
+<div id="intro">
+  <div class="orbit o1"></div>
+  <div class="orbit o2"></div>
+  <div class="orbit o3"></div>
+
+  <button class="skip-btn" id="skip-btn">Lewati →</button>
+
+  <div class="intro-inner">
+    <div class="scene">
+      <svg class="plant-svg" viewBox="0 0 260 280" fill="none">
+        <defs>
+          <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8ecbea" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#4ab8e8" stop-opacity="0.95"/>
+          </linearGradient>
+          <linearGradient id="potGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#d4eaf9"/>
+            <stop offset="100%" stop-color="#b5dcf3"/>
+          </linearGradient>
+          <linearGradient id="stemGrad" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#2da0d4"/>
+            <stop offset="100%" stop-color="#4ab8e8"/>
+          </linearGradient>
+          <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#8ecbea"/>
+            <stop offset="100%" stop-color="#4ab8e8"/>
+          </linearGradient>
+          <radialGradient id="auraGrad" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#4ab8e8" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#4ab8e8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <circle class="aura aura-pulse" cx="130" cy="150" r="120" fill="url(#auraGrad)"/>
+
+        <g class="netpot">
+          <rect x="80" y="230" width="100" height="8" rx="3" fill="#e8f4fd" stroke="#4ab8e8" stroke-width="1.5"/>
+          <path d="M86 238 L96 268 L164 268 L174 238 Z" fill="url(#potGrad)" stroke="#4ab8e8" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="94" y1="248" x2="166" y2="248" stroke="#4ab8e8" stroke-width="0.8" opacity="0.5"/>
+          <line x1="98" y1="258" x2="162" y2="258" stroke="#4ab8e8" stroke-width="0.8" opacity="0.5"/>
+        </g>
+
+        <g class="water-line">
+          <path d="M70 272 Q130 268 190 272 L188 276 Q130 272 72 276 Z" fill="url(#waterGrad)" opacity="0.9"/>
+        </g>
+
+        <path class="root r1" d="M120 265 Q118 275 122 283" stroke="#4ab8e8" stroke-width="1.6" stroke-linecap="round"/>
+        <path class="root r2" d="M130 265 Q131 277 128 285" stroke="#8ecbea" stroke-width="1.4" stroke-linecap="round"/>
+        <path class="root r3" d="M140 265 Q142 275 138 283" stroke="#4ab8e8" stroke-width="1.6" stroke-linecap="round"/>
+
+        <path class="stem" d="M130 232 Q128 190 130 150 Q132 110 130 90" stroke="url(#stemGrad)" stroke-width="4" stroke-linecap="round"/>
+
+        <g class="leaf l1">
+          <path d="M130 160 Q100 155 88 140 Q100 128 130 145 Z" fill="url(#leafGrad)"/>
+          <path d="M130 150 Q105 148 92 140" stroke="#e8f4fd" stroke-width="0.9" fill="none" opacity="0.7"/>
+        </g>
+        <g class="leaf l2">
+          <path d="M130 148 Q160 143 172 128 Q160 116 130 133 Z" fill="url(#leafGrad)"/>
+          <path d="M130 138 Q155 136 168 128" stroke="#e8f4fd" stroke-width="0.9" fill="none" opacity="0.7"/>
+        </g>
+        <g class="leaf l3">
+          <path d="M130 128 Q108 122 98 108 Q108 98 130 115 Z" fill="url(#leafGrad)"/>
+        </g>
+        <g class="leaf l4">
+          <path d="M130 115 Q152 108 162 94 Q152 84 130 102 Z" fill="url(#leafGrad)"/>
+        </g>
+
+        <g class="water-drop">
+          <path d="M130 60 C 133 66, 136 70, 136 74 C 136 78, 133 81, 130 81 C 127 81, 124 78, 124 74 C 124 70, 127 66, 130 60 Z" fill="#4ab8e8"/>
+        </g>
+        <g class="splash">
+          <ellipse cx="130" cy="88" rx="12" ry="3" stroke="#4ab8e8" stroke-width="1.2" fill="none"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="intro-title" id="intro-title"></div>
+
+    <div class="intro-sub">
+      Sistem hidroponik pintar — pantau nutrisi, pH, dan semprot tanaman otomatis dari satu layar.
+    </div>
+
+    <div class="intro-cta-wrap">
+      <button id="enter-btn">Mulai Pantau</button>
+      <div class="load-line"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PICKER — Pilih Jenis Tanaman
+     ============================================================ -->
+<div id="picker">
+  <div class="picker-inner">
+    <div class="picker-header">
+      <div class="picker-eyebrow">LANGKAH 1 DARI 1</div>
+      <div class="picker-title">Apa yang kamu tanam?</div>
+      <div class="picker-sub">Pilih jenis tanaman untuk menyesuaikan rentang sensor & jadwal semprot otomatis.</div>
+    </div>
+
+    <div class="picker-grid" id="picker-grid"></div>
+
+    <div class="picker-actions">
+      <button id="confirm-plant" disabled>Lanjut ke Dashboard →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP / DASHBOARD
+     ============================================================ -->
+<div id="app">
+
+  <div class="top-bar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C12 2 5 11 5 16a7 7 0 0014 0c0-5-7-14-7-14z" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">HidroMonitor</div>
+        <div class="brand-sub">Rak A · <span class="brand-sub-plant" id="current-plant-name">Selada</span></div>
+      </div>
+    </div>
+    <button class="change-plant-btn" id="change-plant-btn">Ganti</button>
+  </div>
+
+  <div class="content">
+
+    <div class="greeting">
+      <div class="greeting-eyebrow">Selamat pagi, Rafa</div>
+      <div class="greeting-title" id="greeting-title">Tanaman kamu sehat hari ini</div>
+    </div>
+
+    <div class="hero-card">
+      <div class="hero-plant-icon" id="hero-plant-emoji">🥬</div>
+      <div class="hero-text">
+        <div class="hero-eyebrow">STATUS HARI INI</div>
+        <div class="hero-title" id="hero-status">Tanaman kamu sehat</div>
+        <div class="hero-meta" id="hero-meta">Semua sensor dalam rentang normal</div>
+      </div>
+    </div>
+
+    <!-- Spray card -->
+    <div class="spray-card" id="spray-card">
+      <div class="spray-particles" id="spray-particles"></div>
+
+      <div class="spray-head">
+        <div class="spray-nozzle" id="spray-nozzle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M9 3h6v4l3 3v9a2 2 0 01-2 2H8a2 2 0 01-2-2v-9l3-3V3z" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/>
+            <circle cx="10" cy="14" r="1" fill="#ffffff"/>
+            <circle cx="14" cy="14" r="1" fill="#ffffff"/>
+            <circle cx="12" cy="17" r="1" fill="#ffffff"/>
+            <path d="M12 3V1M9 1h6" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="spray-info">
+          <div class="spray-title">Semprot Otomatis</div>
+          <div class="spray-sub" id="spray-status-text">Aktif · 3 jadwal</div>
+        </div>
+        <button class="toggle on" id="spray-toggle" aria-label="Toggle"></button>
+      </div>
+
+      <div class="schedule-row">
+        <button class="schedule-chip active" data-schedule="pagi">Pagi</button>
+        <button class="schedule-chip active" data-schedule="siang">Siang</button>
+        <button class="schedule-chip active" data-schedule="sore">Sore</button>
+      </div>
+
+      <div class="duration-row">
+        <span class="duration-label">Durasi</span>
+        <input type="range" id="spray-duration" min="1" max="10" value="4" step="1">
+        <span class="duration-value"><span id="duration-num">4</span>s</span>
+      </div>
+
+      <div class="spray-controls">
+        <button class="spray-btn" id="spray-now-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C12 2 6 9 6 14a6 6 0 1012 0c0-5-6-12-6-12z" fill="#ffffff"/>
+          </svg>
+          Semprot Sekarang
+        </button>
+        <button class="spray-btn secondary" id="spray-stop-btn" disabled aria-label="Stop">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="spray-log">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span id="spray-last-log">Terakhir: 12 menit lalu · 4 detik</span>
+      </div>
+
+      <div class="countdown-overlay" id="countdown-overlay">
+        <div class="ring-wrap">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="42" fill="none" stroke-width="6"/>
+            <circle class="ring-fg" id="ring-fg" cx="50" cy="50" r="42" fill="none" stroke-width="6"
+                    stroke-dasharray="263.9" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-num" id="ring-num">4</div>
+            <div class="ring-label">detik</div>
+          </div>
+        </div>
+        <div class="countdown-text">Menyemprot tanaman...</div>
+      </div>
+    </div>
+
+    <!-- ============================================
+         FITUR TANAMAN — Kartu Info Lengkap
+         ============================================ -->
+    <div class="plant-info-card">
+      <div class="plant-info-head">
+        <div class="plant-info-icon" id="plant-info-emoji">🥬</div>
+        <div class="plant-info-text">
+          <div class="plant-info-title" id="plant-info-title">Tentang Selada</div>
+          <div class="plant-info-desc" id="plant-info-desc">Sayuran daun yang cocok untuk pemula hidroponik.</div>
+        </div>
+      </div>
+
+      <div class="plant-info-tags" id="plant-info-tags"></div>
+
+      <div class="plant-range-title">Rentang Ideal</div>
+      <div class="plant-range-list" id="plant-range-list"></div>
+
+      <div class="plant-spray-info">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C12 2 6 9 6 14a6 6 0 1012 0c0-5-6-12-6-12z" fill="currentColor"/>
+        </svg>
+        <div class="plant-spray-text" id="plant-spray-text">
+          Disemprot <strong>setiap 30 menit</strong> selama <strong>4 detik</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Kualitas Air</div>
+    <div class="grid" id="grid-air"></div>
+
+    <div class="section-label">Lingkungan</div>
+    <div class="grid" id="grid-env"></div>
+
+    <div class="chart-card">
+      <div class="chart-head">
+        <div class="chart-title">Tren pH · 12 jam</div>
+        <div class="chart-now" id="ph-now">pH 6.1</div>
+      </div>
+      <svg id="ph-chart" viewBox="0 0 300 70" width="100%" height="70" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="footer-info" id="last-updated">Diperbarui baru saja</div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="home">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 10l9-7 9 7v10a2 2 0 01-2 2h-4v-7h-6v7H5a2 2 0 01-2-2V10z"/>
+      </svg>
+      <span class="nav-label">Beranda</span>
+    </button>
+    <button class="nav-item" data-tab="sensor">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12h3l2-8 4 16 3-8h4"/>
+      </svg>
+      <span class="nav-label">Sensor</span>
+    </button>
+    <button class="nav-item" data-tab="spray">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3h6v4l3 3v9a2 2 0 01-2 2H8a2 2 0 01-2-2v-9l3-3V3z"/>
+        <path d="M12 3V1M9 1h6"/>
+      </svg>
+      <span class="nav-label">Semprot</span>
+    </button>
+    <button class="nav-item" data-tab="history">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7v5l3 2"/>
+      </svg>
+      <span class="nav-label">Riwayat</span>
+    </button>
+    <button class="nav-item" data-tab="profile">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 21a8 8 0 0116 0"/>
+      </svg>
+      <span class="nav-label">Profil</span>
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" fill="rgba(255,255,255,0.25)"/>
+    <path d="M8 12l3 3 5-6" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>
+  <span id="toast-text">Penyemprotan selesai</span>
+</div>
+
+<script>
+(function(){
+  // ============================================================
+  //  DATABASE JENIS TANAMAN
+  // ============================================================
+  var PLANTS = [
+    {
+      id:'selada', emoji:'🥬', name:'Selada',
+      desc:'Sayuran daun populer, cocok untuk pemula',
+      about:'Sayuran daun yang cepat tumbuh dan cocok untuk pemula hidroponik. Suka suhu sejuk dan cahaya sedang.',
+      tags:['Pemula','30–45 hari','Sejuk'],
+      spray:{ interval:30, defaultDuration:4, schedules:{pagi:true,siang:true,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.5, ideal:'Ideal 5.5–6.5' },
+        ec:      { min:600, max:900, ideal:'Ideal 600–900 ppm' },
+        waterTemp:{ min:18, max:22, ideal:'Ideal 18–22°C' },
+        level:   { min:40, max:100, ideal:'Isi ulang <40%' },
+        airTemp: { min:20, max:26, ideal:'Ideal 20–26°C' },
+        humidity:{ min:60, max:80, ideal:'Ideal 60–80%' },
+        light:   { min:200, max:400, ideal:'Ideal 200–400' }
+      }
+    },
+    {
+      id:'kangkung', emoji:'🌿', name:'Kangkung',
+      desc:'Cepat panen, tahan suhu hangat',
+      about:'Sayuran daun tropis yang sangat cepat tumbuh. Tahan terhadap suhu hangat dan cahaya sedang.',
+      tags:['Cepat','25–30 hari','Tropis'],
+      spray:{ interval:25, defaultDuration:5, schedules:{pagi:true,siang:false,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.5, ideal:'Ideal 5.5–6.5' },
+        ec:      { min:800, max:1200, ideal:'Ideal 800–1200 ppm' },
+        waterTemp:{ min:22, max:28, ideal:'Ideal 22–28°C' },
+        level:   { min:40, max:100, ideal:'Isi ulang <40%' },
+        airTemp: { min:24, max:32, ideal:'Ideal 24–32°C' },
+        humidity:{ min:60, max:85, ideal:'Ideal 60–85%' },
+        light:   { min:300, max:500, ideal:'Ideal 300–500' }
+      }
+    },
+    {
+      id:'tomat', emoji:'🍅', name:'Tomat',
+      desc:'Butuh nutrisi tinggi & cahaya penuh',
+      about:'Tanaman buah yang butuh nutrisi tinggi dan cahaya penuh. Perlu penopang saat berbuah.',
+      tags:['Buah','70–90 hari','Cahaya tinggi'],
+      spray:{ interval:45, defaultDuration:6, schedules:{pagi:true,siang:false,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.5, ideal:'Ideal 5.5–6.5' },
+        ec:      { min:2000, max:3500, ideal:'Ideal 2000–3500 ppm' },
+        waterTemp:{ min:20, max:24, ideal:'Ideal 20–24°C' },
+        level:   { min:50, max:100, ideal:'Isi ulang <50%' },
+        airTemp: { min:22, max:28, ideal:'Ideal 22–28°C' },
+        humidity:{ min:60, max:75, ideal:'Ideal 60–75%' },
+        light:   { min:400, max:700, ideal:'Ideal 400–700' }
+      }
+    },
+    {
+      id:'cabai', emoji:'🌶️', name:'Cabai',
+      desc:'Suka panas, nutrisi tinggi',
+      about:'Tanaman buah yang menyukai suhu hangat dan nutrisi tinggi. Butuh cahaya penuh untuk berbuah lebat.',
+      tags:['Buah','80–100 hari','Hangat'],
+      spray:{ interval:45, defaultDuration:6, schedules:{pagi:true,siang:false,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.5, ideal:'Ideal 5.5–6.5' },
+        ec:      { min:1500, max:2500, ideal:'Ideal 1500–2500 ppm' },
+        waterTemp:{ min:22, max:28, ideal:'Ideal 22–28°C' },
+        level:   { min:45, max:100, ideal:'Isi ulang <45%' },
+        airTemp: { min:24, max:30, ideal:'Ideal 24–30°C' },
+        humidity:{ min:60, max:75, ideal:'Ideal 60–75%' },
+        light:   { min:400, max:700, ideal:'Ideal 400–700' }
+      }
+    },
+    {
+      id:'mentimun', emoji:'🥒', name:'Mentimun',
+      desc:'Merambat, butuh air & nutrisi stabil',
+      about:'Tanaman merambat yang butuh penopang. Nutrisi dan air harus stabil untuk buah yang bagus.',
+      tags:['Buah','55–65 hari','Merambat'],
+      spray:{ interval:35, defaultDuration:5, schedules:{pagi:true,siang:true,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.0, ideal:'Ideal 5.5–6.0' },
+        ec:      { min:1700, max:2500, ideal:'Ideal 1700–2500 ppm' },
+        waterTemp:{ min:22, max:26, ideal:'Ideal 22–26°C' },
+        level:   { min:50, max:100, ideal:'Isi ulang <50%' },
+        airTemp: { min:22, max:30, ideal:'Ideal 22–30°C' },
+        humidity:{ min:65, max:80, ideal:'Ideal 65–80%' },
+        light:   { min:350, max:600, ideal:'Ideal 350–600' }
+      }
+    },
+    {
+      id:'stroberi', emoji:'🍓', name:'Stroberi',
+      desc:'Butuh suhu sejuk & kelembapan stabil',
+      about:'Buah premium yang butuh suhu sejuk dan kelembapan stabil. Sensitif terhadap perubahan pH.',
+      tags:['Buah','90–120 hari','Sejuk'],
+      spray:{ interval:40, defaultDuration:4, schedules:{pagi:true,siang:false,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.5, ideal:'Ideal 5.5–6.5' },
+        ec:      { min:1000, max:1400, ideal:'Ideal 1000–1400 ppm' },
+        waterTemp:{ min:18, max:22, ideal:'Ideal 18–22°C' },
+        level:   { min:45, max:100, ideal:'Isi ulang <45%' },
+        airTemp: { min:18, max:24, ideal:'Ideal 18–24°C' },
+        humidity:{ min:65, max:75, ideal:'Ideal 65–75%' },
+        light:   { min:300, max:500, ideal:'Ideal 300–500' }
+      }
+    },
+    {
+      id:'bayam', emoji:'🥬', name:'Bayam',
+      desc:'Cahaya rendah, tumbuh cepat',
+      about:'Sayuran daun yang toleran cahaya rendah dan tumbuh cepat. Cocok untuk area indoor.',
+      tags:['Daun','30–40 hari','Cahaya rendah'],
+      spray:{ interval:28, defaultDuration:4, schedules:{pagi:true,siang:true,sore:true} },
+      ranges:{
+        ph:      { min:6.0, max:7.0, ideal:'Ideal 6.0–7.0' },
+        ec:      { min:1200, max:1800, ideal:'Ideal 1200–1800 ppm' },
+        waterTemp:{ min:20, max:25, ideal:'Ideal 20–25°C' },
+        level:   { min:40, max:100, ideal:'Isi ulang <40%' },
+        airTemp: { min:22, max:28, ideal:'Ideal 22–28°C' },
+        humidity:{ min:60, max:80, ideal:'Ideal 60–80%' },
+        light:   { min:200, max:400, ideal:'Ideal 200–400' }
+      }
+    },
+    {
+      id:'pakcoy', emoji:'🥬', name:'Pakcoy',
+      desc:'Tahan berbagai kondisi, panen cepat',
+      about:'Sawi hijau yang tahan berbagai kondisi. Cocok untuk pemula dan panen cepat.',
+      tags:['Pemula','30–40 hari','Fleksibel'],
+      spray:{ interval:30, defaultDuration:4, schedules:{pagi:true,siang:false,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.5, ideal:'Ideal 5.5–6.5' },
+        ec:      { min:800, max:1200, ideal:'Ideal 800–1200 ppm' },
+        waterTemp:{ min:20, max:25, ideal:'Ideal 20–25°C' },
+        level:   { min:40, max:100, ideal:'Isi ulang <40%' },
+        airTemp: { min:22, max:28, ideal:'Ideal 22–28°C' },
+        humidity:{ min:60, max:80, ideal:'Ideal 60–80%' },
+        light:   { min:250, max:450, ideal:'Ideal 250–450' }
+      }
+    },
+    {
+      id:'basil', emoji:'🌿', name:'Basil',
+      desc:'Herbal aromatik, suka cahaya',
+      about:'Herbal aromatik yang menyukai cahaya sedang-tinggi. Rutin dipangkas untuk pertumbuhan lebat.',
+      tags:['Herbal','50–60 hari','Aromatik'],
+      spray:{ interval:32, defaultDuration:4, schedules:{pagi:true,siang:false,sore:true} },
+      ranges:{
+        ph:      { min:5.5, max:6.5, ideal:'Ideal 5.5–6.5' },
+        ec:      { min:800, max:1200, ideal:'Ideal 800–1200 ppm' },
+        waterTemp:{ min:20, max:26, ideal:'Ideal 20–26°C' },
+        level:   { min:40, max:100, ideal:'Isi ulang <40%' },
+        airTemp: { min:22, max:30, ideal:'Ideal 22–30°C' },
+        humidity:{ min:55, max:75, ideal:'Ideal 55–75%' },
+        light:   { min:300, max:500, ideal:'Ideal 300–500' }
+      }
+    },
+    {
+      id:'sawi', emoji:'🥬', name:'Sawi',
+      desc:'Daun lebar, tahan cuaca hangat',
+      about:'Sayuran daun lebar yang tahan cuaca hangat. Nutrisi harus stabil agar daun tidak pahit.',
+      tags:['Daun','35–45 hari','Hangat'],
+      spray:{ interval:30, defaultDuration:5, schedules:{pagi:true,siang:false,sore:true} },
+      ranges:{
+        ph:      { min:6.0, max:6.8, ideal:'Ideal 6.0–6.8' },
+        ec:      { min:1000, max:1400, ideal:'Ideal 1000–1400 ppm' },
+        waterTemp:{ min:20, max:26, ideal:'Ideal 20–26°C' },
+        level:   { min:40, max:100, ideal:'Isi ulang <40%' },
+        airTemp: { min:22, max:30, ideal:'Ideal 22–30°C' },
+        humidity:{ min:60, max:80, ideal:'Ideal 60–80%' },
+        light:   { min:250, max:450, ideal:'Ideal 250–450' }
+      }
+    }
+  ];
+
+  // ============================================================
+  //  LABELS untuk rentang ideal
+  // ============================================================
+  var RANGE_LABELS = {
+    ph:'pH Air', ec:'Nutrisi (EC)', waterTemp:'Suhu Air', level:'Level Air',
+    airTemp:'Suhu Udara', humidity:'Kelembapan', light:'Cahaya'
+  };
+  var RANGE_UNITS = {
+    ph:'', ec:' ppm', waterTemp:'°C', level:'%', airTemp:'°C', humidity:'%', light:' µmol'
+  };
+
+  // ============================================================
+  //  STATE & DOM — SEMUA DI ATAS supaya bisa dipakai oleh fungsi manapun
+  // ============================================================
+  var selectedPlant = null;
+  var currentPlant = null;
+  var entered = false;
+  var initialized = false;
+  var sensors = [];
+
+  var intro = document.getElementById('intro');
+  var picker = document.getElementById('picker');
+  var app = document.getElementById('app');
+  var pickerGrid = document.getElementById('picker-grid');
+  var confirmBtn = document.getElementById('confirm-plant');
+  var gridAir = document.getElementById('grid-air');
+  var gridEnv = document.getElementById('grid-env');
+  var currentPlantNameEl = document.getElementById('current-plant-name');
+  var heroEmojiEl = document.getElementById('hero-plant-emoji');
+  var heroStatusEl = document.getElementById('hero-status');
+  var heroMetaEl = document.getElementById('hero-meta');
+  var greetTitleEl = document.getElementById('greeting-title');
+  var plantInfoEmojiEl = document.getElementById('plant-info-emoji');
+  var plantInfoTitleEl = document.getElementById('plant-info-title');
+  var plantInfoDescEl = document.getElementById('plant-info-desc');
+  var plantInfoTagsEl = document.getElementById('plant-info-tags');
+  var plantRangeListEl = document.getElementById('plant-range-list');
+  var plantSprayTextEl = document.getElementById('plant-spray-text');
+  var lastUpdatedEl = document.getElementById('last-updated');
+  var phNowEl = document.getElementById('ph-now');
+
+  // SPRAY DOM — penting: didefinisikan di atas
+  var sprayToggle = document.getElementById('spray-toggle');
+  var sprayNowBtn = document.getElementById('spray-now-btn');
+  var sprayStopBtn = document.getElementById('spray-stop-btn');
+  var sprayNozzle = document.getElementById('spray-nozzle');
+  var sprayParticles = document.getElementById('spray-particles');
+  var sprayStatusText = document.getElementById('spray-status-text');
+  var sprayLastLog = document.getElementById('spray-last-log');
+  var durationSlider = document.getElementById('spray-duration');
+  var durationNum = document.getElementById('duration-num');
+  var countdownOverlay = document.getElementById('countdown-overlay');
+  var ringFg = document.getElementById('ring-fg');
+  var ringNum = document.getElementById('ring-num');
+  var toastEl = document.getElementById('toast');
+  var toastText = document.getElementById('toast-text');
+
+  // SPRAY STATE
+  var autoMode = true;
+  var isSpraying = false;
+  var scheduleChips = document.querySelectorAll('.schedule-chip');
+  var activeSchedules = { pagi:true, siang:true, sore:true };
+  var RING_C = 263.9;
+  var toastTimeout;
+
+  // ============================================================
+  //  HELPERS
+  // ============================================================
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+  function showToast(msg){
+    toastText.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function(){ toastEl.classList.remove('show'); }, 2600);
+  }
+
+  // ============================================================
+  //  INTRO ANIMATION
+  // ============================================================
+  var titleText = 'HidroMonitor';
+  var titleEl = document.getElementById('intro-title');
+  var letters = titleText.split('');
+  var delayStart = 3.9;
+  letters.forEach(function(ch, i){
+    var span = document.createElement('span');
+    span.textContent = ch;
+    span.style.animationDelay = (delayStart + i*0.045) + 's';
+    titleEl.appendChild(span);
+  });
+  var dotSpan = document.createElement('span');
+  dotSpan.className = 'dot';
+  dotSpan.textContent = '.';
+  dotSpan.style.animationDelay = (delayStart + letters.length*0.045 + 0.1) + 's';
+  titleEl.appendChild(dotSpan);
+
+  for(var i=0;i<14;i++){
+    var dot = document.createElement('div');
+    dot.className = 'light-dot';
+    var size = 2+Math.random()*4;
+    dot.style.width = size+'px';
+    dot.style.height = size+'px';
+    dot.style.left = (Math.random()*100)+'%';
+    dot.style.bottom = '-20px';
+    dot.style.animationDuration = (10+Math.random()*12)+'s';
+    dot.style.animationDelay = (Math.random()*8)+'s';
+    intro.appendChild(dot);
+  }
+  for(var j=0;j<12;j++){
+    var drip = document.createElement('div');
+    drip.className = 'drip';
+    var h = 20+Math.random()*50;
+    drip.style.height = h+'px';
+    drip.style.left = (Math.random()*100)+'%';
+    drip.style.animationDuration = (3+Math.random()*4)+'s';
+    drip.style.animationDelay = (Math.random()*5)+'s';
+    intro.appendChild(drip);
+  }
+
+  // ============================================================
+  //  PICKER
+  // ============================================================
+  function buildPickerGrid(){
+    pickerGrid.innerHTML = '';
+    PLANTS.forEach(function(p, idx){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'plant-card';
+      btn.setAttribute('data-plant-id', p.id);
+      btn.style.animationDelay = (0.15 + idx*0.05) + 's';
+      btn.innerHTML =
+        '<span class="plant-emoji">'+p.emoji+'</span>'+
+        '<div class="plant-name">'+p.name+'</div>'+
+        '<div class="plant-desc">'+p.desc+'</div>';
+      btn.addEventListener('click', function(){
+        selectPlant(p.id);
+      });
+      pickerGrid.appendChild(btn);
+    });
+  }
+
+  function selectPlant(plantId){
+    for(var i=0;i<PLANTS.length;i++){
+      if(PLANTS[i].id === plantId){ selectedPlant = PLANTS[i]; break; }
+    }
+    var cards = pickerGrid.querySelectorAll('.plant-card');
+    for(var k=0;k<cards.length;k++){
+      cards[k].classList.toggle('selected', cards[k].getAttribute('data-plant-id') === plantId);
+    }
+    confirmBtn.disabled = false;
+    if(navigator.vibrate) navigator.vibrate(10);
+  }
+
+  function goToPicker(){
+    if(entered) return;
+    entered = true;
+    intro.classList.add('leaving');
+    setTimeout(function(){
+      picker.classList.add('show');
+      buildPickerGrid();
+    }, 500);
+    setTimeout(function(){ intro.style.display='none'; }, 1500);
+  }
+
+  function goToApp(){
+    picker.classList.add('leaving');
+    setTimeout(function(){
+      picker.classList.remove('show');
+      picker.classList.remove('leaving');
+      app.classList.add('show');
+      applyPlantConfig();
+    }, 450);
+  }
+
+  // ============================================================
+  //  APPLY PLANT CONFIG — inti dari fitur tanaman
+  // ============================================================
+  function applyPlantConfig(){
+    if(!currentPlant) return;
+
+    // Header
+    currentPlantNameEl.textContent = currentPlant.name;
+    heroEmojiEl.textContent = currentPlant.emoji;
+
+    // Hero
+    heroStatusEl.textContent = currentPlant.name + ' kamu sehat';
+    heroMetaEl.textContent = 'Semua sensor dalam rentang ideal';
+    greetTitleEl.textContent = currentPlant.name + ' kamu sehat hari ini';
+
+    // ============ FITUR TANAMAN — INFO CARD ============
+    plantInfoEmojiEl.textContent = currentPlant.emoji;
+    plantInfoTitleEl.textContent = 'Tentang ' + currentPlant.name;
+    plantInfoDescEl.textContent = currentPlant.about;
+
+    // Tags
+    plantInfoTagsEl.innerHTML = '';
+    currentPlant.tags.forEach(function(t, idx){
+      var tag = document.createElement('span');
+      tag.className = 'plant-info-tag' + (idx === 0 ? ' highlight' : '');
+      tag.textContent = t;
+      plantInfoTagsEl.appendChild(tag);
+    });
+
+    // ============ RENTANG IDEAL LIST ============
+    plantRangeListEl.innerHTML = '';
+    var rangeOrder = ['ph','ec','waterTemp','level','airTemp','humidity','light'];
+    rangeOrder.forEach(function(key){
+      var r = currentPlant.ranges[key];
+      if(!r) return;
+      var row = document.createElement('div');
+      row.className = 'plant-range-item';
+      var valText = r.min + ' – ' + r.max + RANGE_UNITS[key];
+      row.innerHTML =
+        '<span class="plant-range-label">'+RANGE_LABELS[key]+'</span>'+
+        '<span class="plant-range-value">'+valText+'</span>';
+      plantRangeListEl.appendChild(row);
+    });
+
+    // ============ SPRAY INFO ============
+    var intervalText = currentPlant.spray.interval + ' menit';
+    var durationText = currentPlant.spray.defaultDuration + ' detik';
+    plantSprayTextEl.innerHTML = 'Disemprot <strong>setiap ' + intervalText +
+      '</strong> selama <strong>' + durationText + '</strong>';
+
+    // ============ SPRAY DEFAULT ============
+    if(durationSlider && durationNum){
+      durationSlider.value = currentPlant.spray.defaultDuration;
+      durationNum.textContent = currentPlant.spray.defaultDuration;
+    }
+
+    // Reset schedules
+    activeSchedules = {
+      pagi: !!currentPlant.spray.schedules.pagi,
+      siang: !!currentPlant.spray.schedules.siang,
+      sore: !!currentPlant.spray.schedules.sore
+    };
+    for(var ci=0;ci<scheduleChips.length;ci++){
+      var key = scheduleChips[ci].getAttribute('data-schedule');
+      scheduleChips[ci].classList.toggle('active', !!activeSchedules[key]);
+    }
+    updateSprayStatus();
+
+    // ============ BUILD SENSORS ============
+    buildSensors();
+  }
+
+  // ============================================================
+  //  SENSOR LOGIC
+  // ============================================================
+  function icon(p){ return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none">'+p+'</svg>'; }
+  var C = '#4ab8e8';
+  var ICONS = {
+    ph: icon('<path d="M12 2 5 16a7 7 0 0014 0c0-5-7-14-7-14z" fill="'+C+'"/>'),
+    ec: icon('<path d="M4 12h4l2-6 4 12 2-6h4" stroke="'+C+'" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'),
+    waterTemp: icon('<rect x="10" y="3" width="4" height="12" rx="2" fill="'+C+'"/><circle cx="12" cy="18" r="4" fill="'+C+'"/>'),
+    level: icon('<rect x="5" y="3" width="14" height="18" rx="2" stroke="'+C+'" stroke-width="2" fill="none"/><rect x="7" y="12" width="10" height="7" fill="'+C+'"/>'),
+    airTemp: icon('<path d="M6 18a6 6 0 1012 0c0-4-6-11-6-11S6 14 6 18z" fill="'+C+'"/>'),
+    humidity: icon('<path d="M12 3s7 8 7 13a7 7 0 11-14 0c0-5 7-13 7-13z" fill="'+C+'"/>'),
+    light: icon('<circle cx="12" cy="12" r="5" fill="'+C+'"/><g stroke="'+C+'" stroke-width="2" stroke-linecap="round"><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2 2M17.8 17.8l2 2M4.2 19.8l2-2M17.8 6.2l2-2"/></g>')
+  };
+
+  var SENSOR_META = [
+    { id:'ph', group:'air', label:'pH Air', unit:'', step:0.05, decimals:1, icon:ICONS.ph, absMin:4, absMax:8 },
+    { id:'ec', group:'air', label:'Nutrisi (EC)', unit:'ppm', step:15, decimals:0, icon:ICONS.ec, absMin:400, absMax:4000 },
+    { id:'waterTemp', group:'air', label:'Suhu Air', unit:'°C', step:0.15, decimals:1, icon:ICONS.waterTemp, absMin:15, absMax:34 },
+    { id:'level', group:'air', label:'Level Air', unit:'%', step:1.2, decimals:0, icon:ICONS.level, absMin:0, absMax:100 },
+    { id:'airTemp', group:'env', label:'Suhu Udara', unit:'°C', step:0.2, decimals:1, icon:ICONS.airTemp, absMin:15, absMax:40 },
+    { id:'humidity', group:'env', label:'Kelembapan', unit:'%', step:0.8, decimals:0, icon:ICONS.humidity, absMin:20, absMax:100 },
+    { id:'light', group:'env', label:'Cahaya', unit:'µmol', step:8, decimals:0, icon:ICONS.light, absMin:0, absMax:900 }
+  ];
+
+  function sparkPath(history){
+    var w=100, h=22, pad=2;
+    var min = Math.min.apply(null, history);
+    var max = Math.max.apply(null, history);
+    if(max-min < 0.001){ max = min+1; }
+    return history.map(function(v,i){
+      var x = pad + (i/(history.length-1))*(w-2*pad);
+      var y = h - pad - ((v-min)/(max-min))*(h-2*pad);
+      return x.toFixed(1)+','+y.toFixed(1);
+    }).join(' ');
+  }
+
+  function renderCard(s){
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-'+s.id;
+    var idealLeft = ((s.min - s.absMin)/(s.absMax - s.absMin))*100;
+    var idealWidth = ((s.max - s.min)/(s.absMax - s.absMin))*100;
+    card.innerHTML =
+      '<div class="card-top">'+
+        '<div class="card-icon">'+s.icon+'</div>'+
+        '<div class="warn-badge" id="warn-'+s.id+'" style="visibility:hidden;">⚠</div>'+
+      '</div>'+
+      '<div class="card-label">'+s.label+'</div>'+
+      '<div><span class="card-value" id="val-'+s.id+'">0</span><span class="card-unit">'+s.unit+'</span></div>'+
+      '<svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none" id="spark-'+s.id+'">'+
+        '<path d="M'+sparkPath(s.history)+'"/>'+
+      '</svg>'+
+      '<div class="bar-track">'+
+        '<div class="bar-ideal" style="left:'+idealLeft+'%; width:'+idealWidth+'%"></div>'+
+        '<div class="bar-fill" id="bar-'+s.id+'" style="width:0%"></div>'+
+      '</div>'+
+      '<div class="card-range">'+s.idealText+'</div>';
+    (s.group==='air'?gridAir:gridEnv).appendChild(card);
+  }
+
+  function animateNumber(el, from, to, decimals, duration){
+    var start = performance.now();
+    function frame(t){
+      var p = Math.min((t-start)/duration, 1);
+      var eased = 1 - Math.pow(1-p, 3);
+      var cur = from + (to-from)*eased;
+      el.textContent = cur.toFixed(decimals);
+      if(p<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function initializeSensors(){
+    if(initialized) return;
+    initialized = true;
+    for(var i=0;i<sensors.length;i++){
+      (function(s){
+        var el = document.getElementById('val-'+s.id);
+        if(el) animateNumber(el, 0, s.value, s.decimals, 1400);
+        var barEl = document.getElementById('bar-'+s.id);
+        if(barEl){
+          var pct = clamp(((s.value - s.absMin)/(s.absMax - s.absMin))*100, 0, 100);
+          setTimeout(function(){ barEl.style.width = pct+'%'; }, 100);
+        }
+      })(sensors[i]);
+    }
+  }
+
+  function buildSensors(){
+    sensors = [];
+    initialized = false;
+    gridAir.innerHTML = '';
+    gridEnv.innerHTML = '';
+
+    if(!currentPlant) return;
+
+    SENSOR_META.forEach(function(meta){
+      var range = currentPlant.ranges[meta.id];
+      if(!range) return;
+
+      var startValue = (range.min + range.max) / 2;
+      if(meta.id === 'level') startValue = 82;
+
+      var s = {
+        id: meta.id,
+        group: meta.group,
+        label: meta.label,
+        unit: meta.unit,
+        min: range.min,
+        max: range.max,
+        idealText: range.ideal,
+        absMin: meta.absMin,
+        absMax: meta.absMax,
+        step: meta.step,
+        decimals: meta.decimals,
+        icon: meta.icon,
+        value: startValue,
+        history: []
+      };
+
+      var v = startValue;
+      for(var i=0;i<12;i++){
+        v += (Math.random()-0.5)*s.step*1.5;
+        v = Math.max(s.absMin, Math.min(s.absMax, v));
+        s.history.push(v);
+      }
+      s.history[s.history.length-1] = startValue;
+
+      sensors.push(s);
+      renderCard(s);
+    });
+
+    // Trigger card entrance
+    setTimeout(function(){
+      var cards = document.querySelectorAll('.card');
+      for(var k=0;k<cards.length;k++){
+        (function(c, idx){
+          setTimeout(function(){ c.classList.add('enter'); }, 200 + idx*80);
+        })(cards[k], k);
+      }
+      setTimeout(initializeSensors, 300);
+    }, 50);
+  }
+
+  function updateSensor(s){
+    var delta = (Math.random()-0.5) * s.step * 2;
+    s.value = clamp(s.value + delta, s.absMin, s.absMax);
+    s.history.shift();
+    s.history.push(s.value);
+
+    var valEl = document.getElementById('val-'+s.id);
+    if(valEl) valEl.textContent = s.value.toFixed(s.decimals);
+    var sparkEl = document.getElementById('spark-'+s.id);
+    if(sparkEl) sparkEl.innerHTML = '<path d="M'+sparkPath(s.history)+'"/>';
+
+    var barEl = document.getElementById('bar-'+s.id);
+    if(barEl){
+      var pct = clamp(((s.value - s.absMin)/(s.absMax - s.absMin))*100, 0, 100);
+      barEl.style.width = pct+'%';
+    }
+
+    var outOfRange = s.value < s.min || s.value > s.max;
+    var card = document.getElementById('card-'+s.id);
+    var warn = document.getElementById('warn-'+s.id);
+    if(card && warn){
+      if(outOfRange){ card.classList.add('warn'); warn.style.visibility='visible'; }
+      else { card.classList.remove('warn'); warn.style.visibility='hidden'; }
+    }
+    return outOfRange;
+  }
+
+  function tick(){
+    if(!sensors.length) return;
+    if(!initialized) initializeSensors();
+    var anyWarn = false;
+    for(var i=0;i<sensors.length;i++){
+      if(updateSensor(sensors[i])) anyWarn = true;
+    }
+
+    if(!currentPlant) return;
+    if(anyWarn){
+      heroStatusEl.textContent = 'Ada nilai di luar rentang ideal';
+      heroMetaEl.textContent = 'Periksa kartu bertanda ⚠ di bawah';
+      greetTitleEl.textContent = 'Ada yang perlu dicek nih';
+    } else {
+      heroStatusEl.textContent = currentPlant.name + ' kamu sehat';
+      heroMetaEl.textContent = 'Semua sensor dalam rentang ideal';
+      greetTitleEl.textContent = currentPlant.name + ' kamu sehat hari ini';
+    }
+
+    var now = new Date();
+    lastUpdatedEl.textContent = 'Diperbarui pukul ' +
+      now.getHours().toString().padStart(2,'0') + ':' +
+      now.getMinutes().toString().padStart(2,'0') + ':' +
+      now.getSeconds().toString().padStart(2,'0');
+  }
+
+  // ============================================================
+  //  pH TREND
+  // ============================================================
+  var phHistory = [];
+  var phBase = 6.1;
+  for(var pi=0;pi<24;pi++){
+    phBase += (Math.random()-0.5)*0.12;
+    phBase = clamp(phBase, 5.6, 6.6);
+    phHistory.push(phBase);
+  }
+
+  function drawChart(){
+    var svg = document.getElementById('ph-chart');
+    if(!svg) return;
+    var w = 300, h = 70, pad=6;
+    var min = Math.min.apply(null, phHistory) - 0.1;
+    var max = Math.max.apply(null, phHistory) + 0.1;
+    var pts = phHistory.map(function(v, idx){
+      var x = pad + (idx/(phHistory.length-1)) * (w-2*pad);
+      var y = h - pad - ((v-min)/(max-min)) * (h-2*pad);
+      return x.toFixed(1)+','+y.toFixed(1);
+    }).join(' ');
+    var areaPts = pts + ' ' + (w-pad)+','+(h-pad)+' '+pad+','+(h-pad);
+    svg.innerHTML =
+      '<defs><linearGradient id="phGrad" x1="0" y1="0" x2="0" y2="1">'+
+      '<stop offset="0%" stop-color="#4ab8e8" stop-opacity="0.4"/>'+
+      '<stop offset="100%" stop-color="#4ab8e8" stop-opacity="0"/>'+
+      '</linearGradient></defs>'+
+      '<polygon points="'+areaPts+'" fill="url(#phGrad)"/>'+
+      '<polyline points="'+pts+'" fill="none" stroke="#4ab8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+
+  // ============================================================
+  //  SPRAY
+  // ============================================================
+  function generateParticles(){
+    sprayParticles.innerHTML = '';
+    for(var i=0;i<14;i++){
+      var p = document.createElement('div');
+      p.className = 'particle';
+      var angle = -Math.PI/2 + (Math.random()-0.5)*Math.PI;
+      var dist = 60 + Math.random()*90;
+      var dx = Math.cos(angle)*dist;
+      var dy = Math.sin(angle)*dist - 20;
+      p.style.setProperty('--dx', dx.toFixed(1)+'px');
+      p.style.setProperty('--dy', dy.toFixed(1)+'px');
+      p.style.left = '20px';
+      p.style.top = '30px';
+      p.style.animationDelay = (Math.random()*1.2)+'s';
+      sprayParticles.appendChild(p);
+    }
+  }
+  generateParticles();
+
+  function updateSprayStatus(){
+    if(!autoMode){
+      sprayStatusText.textContent = 'Nonaktif';
+      return;
+    }
+    var activeCount = 0;
+    if(activeSchedules.pagi) activeCount++;
+    if(activeSchedules.siang) activeCount++;
+    if(activeSchedules.sore) activeCount++;
+    sprayStatusText.textContent = 'Aktif · ' + activeCount + ' jadwal';
+  }
+
+  function startSpray(duration){
+    if(isSpraying) return;
+    isSpraying = true;
+    sprayNowBtn.disabled = true;
+    sprayStopBtn.disabled = false;
+    sprayNozzle.classList.add('spraying');
+    sprayParticles.classList.add('active');
+    countdownOverlay.classList.add('active');
+
+    generateParticles();
+    var particles = sprayParticles.querySelectorAll('.particle');
+    for(var i=0;i<particles.length;i++){
+      particles[i].style.animation = 'none';
+      void particles[i].offsetWidth;
+      particles[i].style.animation = '';
+    }
+
+    var total = duration;
+    ringNum.textContent = total;
+    ringFg.style.strokeDashoffset = 0;
+
+    var startTime = performance.now();
+    var totalMs = total * 1000;
+
+    function frame(t){
+      if(!isSpraying) return;
+      var elapsed = t - startTime;
+      var p = Math.min(elapsed/totalMs, 1);
+      var left = Math.max(0, total - elapsed/1000);
+      ringNum.textContent = Math.ceil(left);
+      ringFg.style.strokeDashoffset = (RING_C * p).toFixed(2);
+      if(p < 1){ requestAnimationFrame(frame); }
+      else { finishSpray(); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function finishSpray(){
+    isSpraying = false;
+    sprayNowBtn.disabled = false;
+    sprayStopBtn.disabled = true;
+    sprayNozzle.classList.remove('spraying');
+    sprayParticles.classList.remove('active');
+    countdownOverlay.classList.remove('active');
+    ringFg.style.strokeDashoffset = 0;
+
+    var d = durationSlider.value;
+    var now = new Date();
+    var hh = now.getHours().toString().padStart(2,'0');
+    var mm = now.getMinutes().toString().padStart(2,'0');
+    sprayLastLog.textContent = 'Terakhir: baru saja (' + hh + ':' + mm + ') · ' + d + ' detik';
+    showToast('Selesai · ' + d + ' detik');
+    if(navigator.vibrate) navigator.vibrate(80);
+  }
+
+  function stopSpray(){
+    if(!isSpraying) return;
+    isSpraying = false;
+    sprayNowBtn.disabled = false;
+    sprayStopBtn.disabled = true;
+    sprayNozzle.classList.remove('spraying');
+    sprayParticles.classList.remove('active');
+    countdownOverlay.classList.remove('active');
+    ringFg.style.strokeDashoffset = 0;
+    showToast('Dibatalkan');
+  }
+
+  // ============================================================
+  //  EVENT LISTENERS
+  // ============================================================
+  document.getElementById('enter-btn').addEventListener('click', goToPicker);
+  document.getElementById('skip-btn').addEventListener('click', goToPicker);
+  setTimeout(goToPicker, 11000);
+
+  confirmBtn.addEventListener('click', function(){
+    if(!selectedPlant) return;
+    currentPlant = selectedPlant;
+    goToApp();
+  });
+
+  // CHANGE PLANT — diperbaiki
+  document.getElementById('change-plant-btn').addEventListener('click', function(){
+    // Reset grid sensor
+    gridAir.innerHTML = '';
+    gridEnv.innerHTML = '';
+    sensors = [];
+    initialized = false;
+
+    // Hide app
+    app.classList.remove('show');
+
+    // Picker muncul lagi
+    selectedPlant = currentPlant;
+    setTimeout(function(){
+      picker.classList.add('show');
+      buildPickerGrid();
+      if(currentPlant){
+        selectPlant(currentPlant.id);
+      }
+    }, 350);
+  });
+
+  sprayToggle.addEventListener('click', function(){
+    autoMode = !autoMode;
+    sprayToggle.classList.toggle('on', autoMode);
+    updateSprayStatus();
+    showToast(autoMode ? 'Semprot otomatis aktif' : 'Semprot otomatis nonaktif');
+  });
+
+  for(var ci=0;ci<scheduleChips.length;ci++){
+    (function(chip){
+      chip.addEventListener('click', function(){
+        var key = chip.getAttribute('data-schedule');
+        activeSchedules[key] = !activeSchedules[key];
+        chip.classList.toggle('active', activeSchedules[key]);
+        updateSprayStatus();
+      });
+    })(scheduleChips[ci]);
+  }
+
+  durationSlider.addEventListener('input', function(){
+    durationNum.textContent = durationSlider.value;
+  });
+
+  sprayNowBtn.addEventListener('click', function(){
+    startSpray(parseInt(durationSlider.value, 10));
+  });
+  sprayStopBtn.addEventListener('click', stopSpray);
+
+  // BOTTOM NAV
+  var navItems = document.querySelectorAll('.nav-item');
+  for(var ni=0;ni<navItems.length;ni++){
+    (function(item){
+      item.addEventListener('click', function(){
+        for(var x=0;x<navItems.length;x++) navItems[x].classList.remove('active');
+        item.classList.add('active');
+        var tab = item.getAttribute('data-tab');
+        if(navigator.vibrate) navigator.vibrate(8);
+        if(tab === 'spray'){
+          document.getElementById('spray-card').scrollIntoView({behavior:'smooth', block:'center'});
+        } else if(tab === 'sensor'){
+          gridAir.scrollIntoView({behavior:'smooth', block:'start'});
+        } else if(tab === 'home'){
+          window.scrollTo({top:0, behavior:'smooth'});
+        } else if(tab === 'history'){
+          document.querySelector('.chart-card').scrollIntoView({behavior:'smooth', block:'center'});
+        } else if(tab === 'profile'){
+          document.querySelector('.plant-info-card').scrollIntoView({behavior:'smooth', block:'start'});
+        }
+      });
+    })(navItems[ni]);
+  }
+
+  // Start sensor loop (idle, akan aktif saat sensors ada)
+  setInterval(tick, 3500);
+
+  // Start pH chart animation
+  setTimeout(drawChart, 4200);
+  setInterval(function(){
+    phHistory.shift();
+    var last = phHistory[phHistory.length-1] + (Math.random()-0.5)*0.12;
+    phHistory.push(clamp(last, 5.6, 6.6));
+    if(phNowEl) phNowEl.textContent = 'pH ' + phHistory[phHistory.length-1].toFixed(1);
+    drawChart();
+  }, 3500);
+
+})();
+</script>
+</body>
+</html>
